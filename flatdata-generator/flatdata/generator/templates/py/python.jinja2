@@ -26,6 +26,7 @@ class {{ tree.namespace_path(struct, "_") }}_{{ struct.name }}(flatdata.structur
         "{{ field.name }}",
     {% endfor %}
     }
+
 {% endmacro %}
 
 {% macro archive_definition(tree, archive) %}
@@ -81,11 +82,16 @@ class {{ tree.namespace_path(archive, "_") }}_{{ archive.name }}Builder(flatdata
     }
 
     {% for resource in archive.resources if not resource|is_bound_resource %}
-    def set_{{ resource.name }}(value):
+    def set_{{ resource.name }}(self, value):
         {% if resource|to_container == "flatdata.resources.Instance" %}
-        if isInstance(value, {{ resource|to_initializer(tree) }}):
-            for field in {{ resource|to_initializer(tree) }}._FIELD_KEYS:
-                field=value.field
+        #if isinstance(value, {{ resource|to_initializer(tree) }}):
+        mem = None
+        pos = 0
+        resource_instance = {{ resource|to_initializer(tree) }}(mem,pos)
+        for field in {{ resource|to_initializer(tree) }}._FIELD_KEYS:
+            setattr(resource_instance, field, getattr(value, field))
+        {% else %}
+        pass
         {% endif %}
     {% endfor %}
 
